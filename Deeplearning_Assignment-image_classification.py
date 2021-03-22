@@ -23,6 +23,7 @@ class Softmax:
 
         D = xtrain.shape[1]  # dimensionality
         label = np.unique(ytrain)
+        print(len(label))
         numOfClasses = len(label) # number of classes
         ytrainEnc = self.oneHotEncoding(ytrain, numOfClasses)
         yvalEnc = self.oneHotEncoding(yval, numOfClasses)
@@ -133,8 +134,10 @@ class Softmax:
             y = y.reshape(-1)
         if not numOfClasses:
             numOfClasses = np.max(y) + 1
+        print('y=',y)
         yMatrix = np.zeros((len(y), numOfClasses))
-
+        print('numOfClasses=',numOfClasses)
+        print('len(y)=',len(y))
         yMatrix[np.arange(len(y)), y] = 1
         return yMatrix
 
@@ -246,7 +249,7 @@ if __name__ == "__main__":
     rfc.fit(xtrain,np.ravel(ytrain))
     print('acc using randomforest classifier on testing set=',rfc.score(xtest,np.ravel(ytest)))
     xgbc=XGBClassifier()
-    xgbc.fit(xtrain,ytrain)
-    print('acc using xgboost on testing set=',rfc.score(xtest,np.ravel(ytest)))
+    xgbc.fit(xtrain,np.ravel(ytrain))
+    print('acc using xgboost on testing set=',xgbc.score(xtest,np.ravel(ytest)))
 
 
