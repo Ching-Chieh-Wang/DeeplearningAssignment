@@ -4,6 +4,7 @@ import cv2 as cv
 from skimage import feature
 from tqdm import tqdm
 import random
+import argparse
 
 class Softmax:
 
@@ -110,7 +111,7 @@ class Softmax:
         """
         predict_labels=[]
         for i in x:
-            predict_labels.append([np.argpartition(i.dot(sftmx.wt), -5)[-5:]])
+            predict_labels.append([np.argpartition(i.dot(self.wt), -5)[-5:]])
         return predict_labels
     def meanAccuracy_top5(self, x, y):
         predY = self.predict_top5(x)
@@ -167,14 +168,13 @@ def loadData(trainFilePath, valFilePath,testFilePath):
     xtest=[]
     ytest=[]
     train_path_txt=open(trainFilePath)
-    step=0
+    # capture features using HOG from skimage.feature.hog
     for line in tqdm(train_path_txt,total=63325):
         img=cv.imread(line.split(' ')[0])
         img=cv.resize(img,(128,128))
         fd = feature.hog(img, orientations=9, pixels_per_cell=(8, 8),cells_per_block=(2, 2), transform_sqrt=True, block_norm='L2-Hys')
         xtrain.append(fd)
         ytrain.append([int(line.split(' ')[1])])
-        step+=1
     train_path_txt.close()
     val_path_txt=open(valFilePath)   
     for line in tqdm(val_path_txt,total=450):
@@ -197,9 +197,9 @@ def loadData(trainFilePath, valFilePath,testFilePath):
 
 if __name__ == "__main__":
 
-    print("Loading images")
+    # txt file here
     xtrain, ytrain, xval, yval ,xtest,ytest = loadData('train.txt', 'val.txt','test.txt')
-
+    # hyperparameter tuning here
     parser = argparse.ArgumentParser()
     parser.add_argument("-e", "--epochs", dest="epochs", default=2500,
                         type=int, help="Number of epochs")
@@ -229,14 +229,24 @@ if __name__ == "__main__":
     batchSize = int(args.batchSize)
     regStrength = int(args.regStrength)
     momentum = int(args.momentum)
-
+    # using perceptron class named Softmax
     sftmx = Softmax(epochs=epochs, learningRate=learningRate, batchSize=batchSize,
                        regStrength=regStrength, momentum=momentum)
     trainLosses, valLosses, trainAcc, valAcc = sftmx.train(xtrain, ytrain, xval, yval)
     plotGraph(trainLosses, valLosses, trainAcc, valAcc)
+    # show top-1 and top-5 accuracy
+    print('val top 1 acc=',sftmx.meanAccuracy(xval,yval))
+    print('val top 5 acc=',sftmx.meanAccuracy_top5(xval,yval))
+    print('test top 1 acc=',sftmx.meanAccuracy(xtest,ytest))
+    print('test top 5 acc=',sftmx.meanAccuracy_top5(xtest,ytest))
+    # classify using random forest and xgboost
+    from sklearn.ensemble import RandomForestClassifier
+    from xgboost import XGBClassifier
+    rfc=RandomForestClassifier()
+    rfc.fit(xtrain,np.ravel(ytrain))
+    print('acc using randomforest classifier on testing set=',rfc.score(xtest,np.ravel(ytest)))
+    xgbc=XGBClassifier()
+    xgbc.fit(xtrain,ytrain)
+    print('acc using xgboost on testing set=',rfc.score(xtest,np.ravel(ytest)))
 
-print('val top 1 acc=',sftmx.meanAccuracy(xval,yval))
-print('val top 5 acc=',sftmx.meanAccuracy_top5(xval,yval))
-print('test top 1 acc=',sftmx.meanAccuracy(xtest,ytest))
-print('test top 5 acc=',sftmx.meanAccuracy_top5(xtest,ytest))
 
