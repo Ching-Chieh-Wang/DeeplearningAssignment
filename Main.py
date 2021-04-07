@@ -84,12 +84,6 @@ model.add(Dense(50,activation=Softmax))
 model.compile(CrossEntropyLoss,lr=0.01)
 model.fit(xtrain,ytrain,xval,yval,epochs=15)
 model.plot_result()
-for n,i in enumerate(xtrain):
-    x=i
-    for layer in model.layers:
-        y=layer.forward(x)
-        x=y
-    print('predict{},true{}'.format(np.argmax(y),np.argmax(ytrain[n])))
 
 
 
